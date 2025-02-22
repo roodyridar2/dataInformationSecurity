@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caesar Cipher Encryption</title>
+</head>
+<body>
+    <h2>Caesar Cipher Encryption</h2>
+    <button onclick="runCipher()">Encrypt Text</button>
+
+    <script>
+        function caesarEncrypt(plaintext, shift) {
+            let ciphertext = '';
+            for (let i = 0; i < plaintext.length; i++) {
+                let charCode = plaintext.charCodeAt(i);
+                let shiftedCharCode = (charCode + shift) % 256;
+                ciphertext += String.fromCharCode(shiftedCharCode);
+            }
+            return ciphertext;
+        }
+
+        function runCipher() {
+            let plaintext = prompt("Enter the plaintext:");
+            
+            let shift = parseInt(prompt("Enter the shift value:"));
+            if (isNaN(shift)) {
+            alert("Invalid input! Please enter a number.");
+            return;
+        }
+            let encryptedText = caesarEncrypt(plaintext, shift);
+            alert("Encrypted ciphertext: " + encryptedText);
+        }
+    </script>
+</body>
+</html>

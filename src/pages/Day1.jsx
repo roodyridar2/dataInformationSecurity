@@ -18,6 +18,90 @@ import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 const { Title, Text } = Typography;
 
+// ---------------- Caesar Cipher Functions ----------------
+const caesarEncrypt = (plaintext, shift) => {
+  let ciphertext = "";
+  for (let i = 0; i < plaintext.length; i++) {
+    let charCode = plaintext.charCodeAt(i);
+    let shiftedCharCode = (charCode + shift) % 256;
+    ciphertext += String.fromCharCode(shiftedCharCode);
+  }
+  return ciphertext;
+};
+function getPrintableCharacters() {
+  let characters = [];
+  for (let i = 0; i < 256; i++) {
+    let character = String.fromCharCode(i);
+    if (character.trim() !== "" || character === " ") {
+      characters.push(character);
+    }
+  }
+  return characters;
+}
+const caesarDecrypt = (ciphertext, shift) => {
+  let characters = getPrintableCharacters();
+  let characterMap = {};
+
+  characters.forEach((char, index) => {
+    characterMap[char] = index;
+  });
+
+  let decryptedText = "";
+  for (let char of ciphertext) {
+    if (!(char in characterMap)) {
+      console.error("Error: Unrecognized character in input.");
+      return "";
+    }
+    let newIndex =
+      (characterMap[char] - shift + characters.length) % characters.length;
+    decryptedText += characters[newIndex];
+  }
+  return decryptedText;
+};
+
+const caesarAttack = (ciphertext) => {
+  const results = [];
+  for (let s = 0; s < 256; s++) {
+    results.push({ shift: s, text: caesarDecrypt(ciphertext, s) });
+  }
+  return results;
+};
+
+// ---------------- Monoalphabetic Cipher Functions ----------------
+function generateShuffledKeyMap() {
+  let chars = [];
+  for (let i = 0; i < 256; i++) {
+    chars.push(String.fromCharCode(i));
+  }
+  // Simple shuffle using sort with random comparator
+  let shuffled = chars.slice().sort(() => Math.random() - 0.5);
+  let keyMap = {};
+  for (let i = 0; i < chars.length; i++) {
+    keyMap[chars[i]] = shuffled[i];
+  }
+  return keyMap;
+}
+
+function monoalphabeticEncrypt(text, keyMap) {
+  let result = "";
+  for (let char of text) {
+    result += keyMap[char] || char;
+  }
+  return result;
+}
+
+function monoalphabeticDecrypt(text, keyMap) {
+  let reverseKeyMap = {};
+  for (let key in keyMap) {
+    reverseKeyMap[keyMap[key]] = key;
+  }
+  let result = "";
+  for (let char of text) {
+    result += reverseKeyMap[char] || char;
+  }
+  return result;
+}
+
 const Day1 = () => {
   // ---------- Caesar Cipher States ----------
   const [caesarPlaintext, setCaesarPlaintext] = useState("");
@@ -33,12 +117,10 @@ const Day1 = () => {
 
   // ---------- Monoalphabetic Cipher States ----------
   const [monoPlaintext, setMonoPlaintext] = useState("");
-  const [monoShift, setMonoShift] = useState(0);
   const [monoEncrypted, setMonoEncrypted] = useState("");
-
   const [monoCiphertext, setMonoCiphertext] = useState("");
-  const [monoShiftDecrypt, setMonoShiftDecrypt] = useState(0);
   const [monoDecrypted, setMonoDecrypted] = useState("");
+  const [monoKeyMap, setMonoKeyMap] = useState(generateShuffledKeyMap());
 
   // ---------- Modal Visibility States ----------
   const [visibleCaesarCode, setVisibleCaesarCode] = useState(false);
@@ -70,52 +152,15 @@ const Day1 = () => {
 
   const resetMonoEncryption = () => {
     setMonoPlaintext("");
-    setMonoShift(0);
     setMonoEncrypted("");
   };
 
   const resetMonoDecryption = () => {
     setMonoCiphertext("");
-    setMonoShiftDecrypt(0);
     setMonoDecrypted("");
   };
 
-  // ---------- Cipher Functions (using Extended ASCII 0-255) ----------
-  const caesarEncrypt = (plaintext, shift) => {
-    return plaintext
-      .split("")
-      .map((char) => {
-        const code = char.charCodeAt(0);
-        return String.fromCharCode((code + shift + 256) % 256);
-      })
-      .join("");
-  };
-
-  const caesarDecrypt = (ciphertext, shift) => {
-    return ciphertext
-      .split("")
-      .map((char) => {
-        const code = char.charCodeAt(0);
-        return String.fromCharCode((code - shift + 256) % 256);
-      })
-      .join("");
-  };
-
-  const caesarAttack = (ciphertext) => {
-    const results = [];
-    for (let s = 0; s < 256; s++) {
-      results.push({ shift: s, text: caesarDecrypt(ciphertext, s) });
-    }
-    return results;
-  };
-
-  // Monoalphabetic cipher simulated with the same shift logic
-  const monoalphabeticEncrypt = (plaintext, shift) =>
-    caesarEncrypt(plaintext, shift);
-  const monoalphabeticDecrypt = (ciphertext, shift) =>
-    caesarDecrypt(ciphertext, shift);
-
-  // ---------- Handlers ----------
+  // ---------- Handlers for Caesar Cipher ----------
   const handleCaesarEncrypt = () => {
     const shiftVal = parseInt(caesarShift, 10);
     const result = caesarEncrypt(caesarPlaintext, shiftVal);
@@ -133,51 +178,139 @@ const Day1 = () => {
     setBruteForceResults(results);
   };
 
+  // ---------- Handlers for Monoalphabetic Cipher ----------
   const handleMonoEncrypt = () => {
-    const shiftVal = parseInt(monoShift, 10);
-    const result = monoalphabeticEncrypt(monoPlaintext, shiftVal);
+    const result = monoalphabeticEncrypt(monoPlaintext, monoKeyMap);
     setMonoEncrypted(result);
   };
 
   const handleMonoDecrypt = () => {
-    const shiftVal = parseInt(monoShiftDecrypt, 10);
-    const result = monoalphabeticDecrypt(monoCiphertext, shiftVal);
+    const result = monoalphabeticDecrypt(monoCiphertext, monoKeyMap);
     setMonoDecrypted(result);
   };
 
+  const handleGenerateNewKey = () => {
+    const newKeyMap = generateShuffledKeyMap();
+    setMonoKeyMap(newKeyMap);
+    message.success("New key generated!");
+  };
+
   // ---------- Code Strings for Modals ----------
-  const caesarCodeString = `// Caesar Cipher Functions
-const caesarEncrypt = (plaintext, shift) => {
-  return plaintext
-    .split("")
-    .map(char => {
-      const code = char.charCodeAt(0);
-      return String.fromCharCode((code + shift + 256) % 256);
-    })
-    .join("");
-};
-
-const caesarDecrypt = (ciphertext, shift) => {
-  return ciphertext
-    .split("")
-    .map(char => {
-      const code = char.charCodeAt(0);
-      return String.fromCharCode((code - shift + 256) % 256);
-    })
-    .join("");
-};
-
-const caesarAttack = (ciphertext) => {
-  const results = [];
-  for (let s = 0; s < 256; s++) {
-    results.push({ shift: s, text: caesarDecrypt(ciphertext, s) });
+  const caesarCodeString = `//
+  //-----------------Caesar Cipher Functions
+function caesarEncrypt(plaintext, shift) {
+      let ciphertext = '';
+      for (let i = 0; i < plaintext.length; i++) {
+          let charCode = plaintext.charCodeAt(i);
+          let shiftedCharCode = (charCode + shift) % 256;
+          ciphertext += String.fromCharCode(shiftedCharCode);
+      }
+      return ciphertext;
   }
-  return results;
-};`;
 
-  const monoCodeString = `// Monoalphabetic Cipher Functions (using shift substitution)
-const monoalphabeticEncrypt = (plaintext, shift) => caesarEncrypt(plaintext, shift);
-const monoalphabeticDecrypt = (ciphertext, shift) => caesarDecrypt(ciphertext, shift);`;
+
+//-----------------Caesar caesar Decrypt
+function getPrintableCharacters() {
+    let characters = [];
+    for (let i = 0; i < 256; i++) {
+        let character = String.fromCharCode(i);
+        if (character.trim() !== "" || character === " ") { 
+            characters.push(character);
+        }
+    }
+    return characters;
+}
+
+function decryptCaesarCipher(text, shift) {
+    let characters = getPrintableCharacters();
+    let characterMap = {};
+    
+    characters.forEach((char, index) => {
+        characterMap[char] = index;
+    });
+
+    let decryptedText = "";
+    for (let char of text) {
+        if (!(char in characterMap)) {
+            console.error("Error: Unrecognized character in input.");
+            return "";
+        }
+        let newIndex = (characterMap[char] - shift + characters.length) % characters.length;
+        decryptedText += characters[newIndex];
+    }
+    
+    return decryptedText;
+}
+
+
+----------------- caesar Attack 
+function getPrintableCharacters() {
+    let characters = [];
+    for (let i = 32; i < 127; i++) { // Limiting to standard printable ASCII
+        characters.push(String.fromCharCode(i));
+    }
+    return characters;
+}
+
+function decryptCaesarCipher(text, shift) {
+    let characters = getPrintableCharacters();
+    let decryptedText = "";
+
+    for (let char of text) {
+        let code = char.charCodeAt(0);
+        // Only shift letters; leave all other characters unchanged.
+        if (!((code >= 65 && code <= 90) || (code >= 97 && code <= 122))) {
+            decryptedText += char;
+            continue;
+        }
+        let index = characters.indexOf(char);
+        let newIndex = (index - shift + characters.length) % characters.length;
+        decryptedText += characters[newIndex];
+    }
+    return decryptedText;
+}
+
+function caesarAttack(cipherText) {
+    let characters = getPrintableCharacters();
+    for (let shift = 0; shift < characters.length; shift++) {
+        console.log("Shift {shift}: {decryptCaesarCipher(cipherText, shift)}");
+    }
+}
+
+
+`;
+
+  const monoCodeString = `// Monoalphabetic Cipher Functions using a shuffled key map
+function generateShuffledKeyMap() {
+  let chars = [];
+  for (let i = 0; i < 256; i++) chars.push(String.fromCharCode(i));
+  let shuffled = chars.slice().sort(() => Math.random() - 0.5); // Simple shuffle
+  let keyMap = {};
+  for (let i = 0; i < chars.length; i++) {
+    keyMap[chars[i]] = shuffled[i];
+  }
+  return keyMap;
+}
+
+function monoalphabeticEncrypt(text, keyMap) {
+  let result = "";
+  for (let char of text) {
+    result += keyMap[char] || char;
+  }
+  return result;
+}
+
+function monoalphabeticDecrypt(text, keyMap) {
+  let reverseKeyMap = {};
+  for (let key in keyMap) {
+    reverseKeyMap[keyMap[key]] = key;
+  }
+  let result = "";
+  for (let char of text) {
+    result += reverseKeyMap[char] || char;
+  }
+  return result;
+}`;
 
   // ---------- Styles ----------
   const containerStyle = {
@@ -192,11 +325,10 @@ const monoalphabeticDecrypt = (ciphertext, shift) => caesarDecrypt(ciphertext, s
     overflow: "hidden",
   };
 
-
   const sectionSpacing = { marginBottom: "24px" };
 
   return (
-    <div style={containerStyle } className=" rounded-2xl">
+    <div style={containerStyle} className="rounded-2xl">
       <Title style={{ textAlign: "center", marginBottom: "40px" }}>
         Modern Cipher Tools
       </Title>
@@ -380,6 +512,50 @@ const monoalphabeticDecrypt = (ciphertext, shift) => caesarDecrypt(ciphertext, s
               </Button>
             }
           >
+            {/* Key Generation & Display */}
+            <div style={sectionSpacing}>
+              <Title level={4}>Key Generation</Title>
+              <div
+                style={{ display: "flex", gap: "8px", alignItems: "center" }}
+              >
+                <Button type="primary" onClick={handleGenerateNewKey}>
+                  Generate New Key
+                </Button>
+                <Button
+                  type="text"
+                  icon={<CopyOutlined />}
+                  onClick={() =>
+                    copyToClipboard(JSON.stringify(monoKeyMap, null, 2))
+                  }
+                >
+                  Copy Key
+                </Button>
+              </div>
+            </div>
+            <div style={sectionSpacing}>
+              <Title level={4}>Current Key Map</Title>
+              <div style={{ position: "relative" }}>
+                <pre
+                  style={{
+                    maxHeight: "200px",
+                    overflowY: "auto",
+                    background: "#fafafa",
+                    border: "1px solid #e8e8e8",
+                    padding: "12px",
+                  }}
+                >
+                  {JSON.stringify(monoKeyMap, null, 2)}
+                </pre>
+                <Button
+                  type="text"
+                  icon={<CopyOutlined />}
+                  onClick={() =>
+                    copyToClipboard(JSON.stringify(monoKeyMap, null, 2))
+                  }
+                  style={{ position: "absolute", top: "8px", right: "8px" }}
+                />
+              </div>
+            </div>
             {/* Encryption */}
             <div style={sectionSpacing}>
               <Title level={4}>Encryption</Title>
@@ -389,20 +565,15 @@ const monoalphabeticDecrypt = (ciphertext, shift) => caesarDecrypt(ciphertext, s
                 onChange={(e) => setMonoPlaintext(e.target.value)}
                 style={{ marginBottom: "12px" }}
               />
-              <Tooltip title="Enter a numeric shift value">
-                <Input
-                  placeholder="Enter shift value"
-                  type="number"
-                  value={monoShift}
-                  onChange={(e) => setMonoShift(e.target.value)}
-                  style={{ marginBottom: "12px" }}
-                />
-              </Tooltip>
               <div style={{ display: "flex", gap: "8px" }}>
                 <Button type="primary" onClick={handleMonoEncrypt}>
                   Encrypt
                 </Button>
-                <Button icon={<ReloadOutlined />} onClick={resetMonoEncryption}>
+                <Button
+                  type="text"
+                  icon={<ReloadOutlined />}
+                  onClick={resetMonoEncryption}
+                >
                   Reset
                 </Button>
               </div>
@@ -440,20 +611,15 @@ const monoalphabeticDecrypt = (ciphertext, shift) => caesarDecrypt(ciphertext, s
                 onChange={(e) => setMonoCiphertext(e.target.value)}
                 style={{ marginBottom: "12px" }}
               />
-              <Tooltip title="Enter a numeric shift value">
-                <Input
-                  placeholder="Enter shift value"
-                  type="number"
-                  value={monoShiftDecrypt}
-                  onChange={(e) => setMonoShiftDecrypt(e.target.value)}
-                  style={{ marginBottom: "12px" }}
-                />
-              </Tooltip>
               <div style={{ display: "flex", gap: "8px" }}>
                 <Button type="primary" onClick={handleMonoDecrypt}>
                   Decrypt
                 </Button>
-                <Button icon={<ReloadOutlined />} onClick={resetMonoDecryption}>
+                <Button
+                  type="text"
+                  icon={<ReloadOutlined />}
+                  onClick={resetMonoDecryption}
+                >
                   Reset
                 </Button>
               </div>
@@ -501,11 +667,9 @@ const monoalphabeticDecrypt = (ciphertext, shift) => caesarDecrypt(ciphertext, s
             Copy Code
           </Button>
         </div>
-        {/* <pre style={codeModalStyle}> */}
         <SyntaxHighlighter language="javascript" style={atomDark}>
           {caesarCodeString}
         </SyntaxHighlighter>
-        {/* </pre> */}
       </Modal>
 
       {/* ---------- Monoalphabetic Code Modal ---------- */}
@@ -524,11 +688,9 @@ const monoalphabeticDecrypt = (ciphertext, shift) => caesarDecrypt(ciphertext, s
             Copy Code
           </Button>
         </div>
-        {/* <pre style={codeModalStyle}> */}
         <SyntaxHighlighter language="javascript" style={atomDark}>
           {monoCodeString}
         </SyntaxHighlighter>
-        {/* </pre> */}
       </Modal>
     </div>
   );
