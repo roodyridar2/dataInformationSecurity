@@ -9,12 +9,16 @@ import {
   Typography,
   Tooltip,
   message,
+  Tabs,
 } from "antd";
 import { CopyOutlined, ReloadOutlined } from "@ant-design/icons";
 import { motion } from "framer-motion";
 import "antd/dist/reset.css";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import CaesarCipherWheel from "../components/CaesarCipherWheel";
+import TabsUi from "../components/Tabs";
+import MonoalphabeticCipherCalculator from "../components/MonoalphabeticCipherCalculator";
 
 const { Title, Text } = Typography;
 
@@ -498,6 +502,10 @@ function monoalphabeticDecrypt(text, keyMap) {
                 until the decrypted text is intelligible.
               </Text>
             </div>
+            {/* take extra space to make equal */}
+            <div 
+            className="h-18  lg:h-24 md:h-24 "
+            ></div>
           </Card>
         </Col>
 
@@ -692,6 +700,23 @@ function monoalphabeticDecrypt(text, keyMap) {
           {monoCodeString}
         </SyntaxHighlighter>
       </Modal>
+      {/* TAbs */}
+      <div>
+        <TabsUi
+          tabs={[
+            {
+              id: "caesar-cipher",
+              label: "Caesar Cipher",
+              content: <CaesarCipherWheel />,
+            },
+            {
+              id: "Monoalphabetic-cipher",
+              label: "Monoalphabetic Cipher",
+              content: <MonoalphabeticCipherCalculator />,
+            },
+          ]}
+        />
+      </div>
     </div>
   );
 };

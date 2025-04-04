@@ -133,8 +133,8 @@ const Dashboard = () => {
         to="/"
         className="absolute top-4 left-4 bg-white p-2 rounded-full shadow-lg flex justify-center items-center gap-2"
       >
-        <FiMapPin className="text-xl text-indigo-600" />
-        <span className=" bold font-mono text-xl ">Home</span>
+        <FiMapPin className="text-2xl text-indigo-600" />
+        <span className=" bold font-mono text-sm ">Home</span>
       </NavLink>
       <div>
         <Outlet />
@@ -163,7 +163,7 @@ const Dashboard = () => {
         className={`fixed z-50 ${
           menuOpen
             ? "inset-0 flex items-center justify-center"
-            : "bottom-10 right-10"
+            : "top-4 right-10"
         }`}
       >
         {menuOpen && (
